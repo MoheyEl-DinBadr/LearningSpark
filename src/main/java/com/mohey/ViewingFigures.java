@@ -25,7 +25,7 @@ public class ViewingFigures
 
 		SparkConf conf = new SparkConf().setAppName("startingSpark").setMaster("local[*]");
 		JavaSparkContext sc = new JavaSparkContext(conf);
-		
+		Runtime.getRuntime().addShutdownHook(new Thread(() ->sc.close()));
 		// Use true to use hardcoded data identical to that in the PDF guide.
 		boolean testMode = false;
 		
@@ -63,7 +63,9 @@ public class ViewingFigures
 				.reduceByKey(Integer::sum)
 				.join(titlesData).mapToPair(v1 -> Tuple2.apply(v1._2()._1(), v1._2()._2()))
 				.sortByKey(false).take(20).forEach(System.out::println);
-		sc.close();
+
+		while(true);
+
 	}
 
 	private static JavaPairRDD<Integer, String> setUpTitlesDataRdd(JavaSparkContext sc, boolean testMode) {
