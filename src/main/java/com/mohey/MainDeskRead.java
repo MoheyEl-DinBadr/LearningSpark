@@ -16,9 +16,9 @@ public class MainDeskRead {
         //When deploying to a cluster remove .setMaster("local[*]")
         SparkConf conf = new SparkConf().setAppName("startingSpark").setMaster("local[*]");
         JavaSparkContext sc = new JavaSparkContext(conf);
-        Runtime.getRuntime().addShutdownHook(new Thread(()->{
-            sc.close();
-        }));
+        Runtime.getRuntime().addShutdownHook(new Thread(()->
+            sc.close()
+        ));
         //When deploying on aws cluster or outside the code you pass the textFile path outside the jar
         //s3n://vpp-spark-demos/input.txt
         JavaRDD<String> initialRDDD = sc.textFile("src/main/resources/subtitles/input.txt", 35);
@@ -34,7 +34,7 @@ public class MainDeskRead {
                 sortByKey(false);
 
         System.out.println("sortedRDDD.getNumPartitions() = " + sortedRDDD.getNumPartitions());
-        sortedRDDD.take((int) sortedRDDD.count()).forEach(System.out::println);
+        sortedRDDD.take(10).forEach(System.out::println);
 
 //                forEach(stringIntegerTuple2 -> System.out.println("Key: " +
 //                        stringIntegerTuple2._1() + ", Repetitions: " + stringIntegerTuple2._2()));

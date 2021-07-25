@@ -27,14 +27,42 @@ public class ViewingFigures
 		JavaSparkContext sc = new JavaSparkContext(conf);
 		
 		// Use true to use hardcoded data identical to that in the PDF guide.
-		boolean testMode = true;
+		boolean testMode = false;
 		
 		JavaPairRDD<Integer, Integer> viewData = setUpViewDataRdd(sc, testMode);
 		JavaPairRDD<Integer, Integer> chapterData = setUpChapterDataRdd(sc, testMode);
 		JavaPairRDD<Integer, String> titlesData = setUpTitlesDataRdd(sc, testMode);
 
 		// TODO - over to you!
-		
+		JavaPairRDD<Integer, Tuple2<Integer, Long>> userBookRDD = viewData.distinct()
+				.mapToPair(tuple2 -> Tuple2.apply(tuple2._2(), tuple2._1()))
+				.join(chapterData)
+				.mapToPair(tuple2 -> Tuple2.apply(Tuple2.apply(tuple2._2()._1(), tuple2._2()._2()),1L))
+				.reduceByKey(Long::sum)
+				.mapToPair(tuple ->Tuple2.apply(tuple._1()._2(), Tuple2.apply(tuple._1()._1(), tuple._2())));
+
+		JavaPairRDD<Integer, Long> bookChaptersSum = chapterData.mapToPair(tuple2 -> Tuple2.apply(tuple2._2(), 1L))
+			.reduceByKey(Long::sum);
+
+		bookChaptersSum.join(userBookRDD).
+				mapToPair(elemnt -> {
+					Long sum = elemnt._2()._1();
+					Long sumPerUser = elemnt._2()._2()._2();
+					int rank = 0;
+					int percent = (int) ((sumPerUser.doubleValue() / sum.doubleValue())*100);
+					if(percent >= 90){
+						rank = 10;
+					}else if(percent > 50){
+						rank = 4;
+					}else if(percent > 25){
+						rank = 2;
+					}
+
+					return Tuple2.apply(elemnt._1(), rank);
+				})
+				.reduceByKey(Integer::sum)
+				.join(titlesData).mapToPair(v1 -> Tuple2.apply(v1._2()._1(), v1._2()._2()))
+				.sortByKey(false).take(20).forEach(System.out::println);
 		sc.close();
 	}
 
