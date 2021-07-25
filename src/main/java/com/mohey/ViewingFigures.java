@@ -9,6 +9,7 @@ import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 
+import org.apache.spark.storage.StorageLevel;
 import scala.Tuple2;
 
 /**
@@ -113,7 +114,7 @@ public class ViewingFigures
 													  .mapToPair(commaSeparatedLine -> {
 															String[] cols = commaSeparatedLine.split(",");
 															return new Tuple2<Integer, Integer>(new Integer(cols[0]), new Integer(cols[1]));
-													  	});
+													  	}).persist(StorageLevel.DISK_ONLY());
 	}
 
 	private static JavaPairRDD<Integer, Integer> setUpViewDataRdd(JavaSparkContext sc, boolean testMode) {
