@@ -24,6 +24,7 @@ public class SQLTest {
     private static SparkSession spark;
     private static List<Row> inMemory = new ArrayList();
     private static Dataset<Row> dataset;
+
     @BeforeAll
     public static void init(){
         spark = SparkSession.builder().master("local[1]").appName("SQLTest").getOrCreate();
