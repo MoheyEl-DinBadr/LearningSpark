@@ -7,6 +7,7 @@ import org.apache.spark.sql.SparkSession;
 import org.apache.spark.sql.types.*;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import scala.collection.mutable.WrappedArray;
 
 
 import java.util.ArrayList;
@@ -58,6 +59,32 @@ public class SQLTest {
                 case "WARN":
                 case "FATAL":
                     assertEquals((Long)element.getAs("num"),2l);
+                    break;
+            }
+        });
+    }
+
+    @Test
+    public void dataFormattingTest(){
+        spark.sql("SELECT level, DATE_FORMAT(dateTime, 'MMM') AS month FROM logging_table").show();
+    }
+
+    @Test
+    public void multipleGroupingsTest(){
+        spark.sql("SELECT level, DATE_FORMAT(dateTime, 'MMMM') AS month, COUNT(1) AS total FROM logging_table GROUP BY level, month").show();
+    }
+
+    @Test
+    public void aggregate(){
+        Dataset<Row> result = spark.sql("SELECT level, COLLECT_LIST(dateTime) as events FROM logging_table GROUP BY level");
+        result.collectAsList().forEach(element ->{
+            String level = element.getAs("level");
+            switch(level){
+                case "INFO":assertEquals(((WrappedArray)element.getAs("events")).size(),1);
+                    break;
+                case "WARN":
+                case "FATAL":
+                    assertEquals(((WrappedArray)element.getAs("events")).size(),2);
                     break;
             }
         });
