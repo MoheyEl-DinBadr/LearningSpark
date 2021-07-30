@@ -12,7 +12,7 @@ import org.apache.spark.sql.types.DataTypes;
  * @date 7/28/21 5:28 PM
  * @email MoheyElDin.Badr@gmail.com
  */
-public class ExamResults2 {
+public class ExamResultsPivot {
     public static void main(String[] args) {
         SparkSession spark = SparkSession.builder().appName("testingSql").master("local[*]")
                                                     .getOrCreate();

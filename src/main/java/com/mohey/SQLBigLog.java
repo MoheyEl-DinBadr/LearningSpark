@@ -6,6 +6,7 @@ import org.apache.spark.sql.SparkSession;
 import org.apache.spark.sql.types.DataTypes;
 
 import java.text.DateFormatSymbols;
+import java.text.SimpleDateFormat;
 import java.time.Month;
 import java.time.YearMonth;
 import java.util.ArrayList;
@@ -28,26 +29,44 @@ public class SQLBigLog {
         Dataset<Row> logs = session.read().option("header", true).
                 csv("src/main/resources/logs/biglog.txt");
 
+        session.conf().set("spark.sql.shuffle.partitions", "5");
+        List<Object> months =new ArrayList<>(List.of(DateFormatSymbols.getInstance().getMonths()));
+
+        session.udf().register("monthNum", (String month)-> months.indexOf(month) + 1, DataTypes.IntegerType);
         logs.createOrReplaceTempView("logging_table");
+
+        //Using UDFs
+        Dataset<Row>  results = session.sql("SELECT level, DATE_FORMAT(datetime, 'MMMM') AS month, COUNT(1) AS total" +
+                " FROM logging_table GROUP BY level, month ORDER BY monthNum(month), level");
+        results.show();
+        results.explain();
         //multipleGroupingsTest(session);
+
+        //Using Java
+        /*logs = logs.select(col("level"),
+                date_format(col("datetime"), "MMMM").alias("month")*//*,
+                date_format(col("datetime"), "M").alias("monthnum")*//*)
+                .groupBy("level", "month"*//*, "monthnum"*//*)
+                .count().orderBy(*//*"monthnum"*//*callUDF("monthNum", col("month")), col("level"));
+*/
         /*logs = logs.select(col("level"),
                 date_format(col("datetime"), "MMMM").alias("month"),
-                date_format(col("datetime"), "M").alias("monthnum"))
-                .groupBy("level", "month", "monthnum")
-                .count().orderBy("monthnum", "level");*/
-
-        logs = logs.select(col("level"),
-                date_format(col("datetime"), "MMMM").alias("month"),
                 date_format(col("datetime"), "M").alias("monthnum").cast(DataTypes.IntegerType));
-        List<Object> months =new ArrayList<>(List.of(DateFormatSymbols.getInstance().getMonths()));
-        months.remove(12);
-        System.out.println("DateFormatSymbols.getInstance().getMonths() = " + months);
+        //months.remove(12);
 
-        logs.groupBy("level").pivot("month", months).count().na().fill(0).show();
+        logs = logs.groupBy("level", "month", "monthnum")
+                .count().as("total").orderBy("monthnum").drop("monthnum");*/
+
+        //logs.show();
+        //logs.explain();
+        /*System.out.println("DateFormatSymbols.getInstance().getMonths() = " + months);
+
+        logs.groupBy("level").pivot("month", months).count().na().fill(0).show();*/
         //Create a Pivot Table
 
 
         //logs.show();
+        while(true);
     }
 
     public static void multipleGroupingsTest(SparkSession session){
